@@ -1,8 +1,10 @@
 const express = require("express");
 const ejs = require("ejs")
 const mongoose = require('mongoose')
+const methodOverride = require("method-override");
 const Post = require('./models/Posts')
-
+const postController = require('./controllers/postController')
+const pageController = require('./controllers/pageController')
 const app = express();
 
 mongoose.connect('mongodb://localhost/cleanblog-test-db')
@@ -11,42 +13,33 @@ mongoose.connect('mongodb://localhost/cleanblog-test-db')
 app.use(express.static("public"))
 app.use(express.urlencoded({extended:true}))
 app.use(express.json())
+app.use(methodOverride("_method",{
+  methods:[
+    'POST','GET'
+  ]
+}));
 
 //TEMPLATE ENGINE
 app.set("view engine","ejs")
 
 //ROUTES
-app.get("/", async (req,res) => {
-  const posts = await Post.find({}) 
-    res.render("index",{
-      posts
-    })
-})
+app.get("/", postController.getAllPosts)
 
-app.get("/about", (req, res) => {
-  res.render("about")
-});
+//ilgili post sayfsasi acilimi
+app.get("/posts/:id", postController.getOnePost);
 
-app.get("/add_post", (req, res) => {
-  res.render("add_post")
-});
+//post silme
+app.delete("/posts/:id", postController.deletePost);
+//POST GUNCELLEME
+app.put("/posts/:id", postController.updatePost)
 
-app.get("/post", (req, res) => {
-  res.render("post")
-});
+//post atma islemi
+app.post("/posts", pageController.getPostsPage);
 
-app.post("/posts", async (req, res) => {
-  await Post.create(req.body)
-  console.log(req.body)
-  res.redirect('/')
-});
-
-app.get("/posts/:id", async (req, res) => {
-  const post = await Post.findById(req.params.id)
-  res.render('post',{
-    post
-  })
-});
+app.get("/about", pageController.getAboutPage);
+app.get("/add_post", pageController.getAddPage);
+app.get("/post", pageController.getPostPage);
+app.get("/posts/edit/:id", pageController.getEditPage);
 
 
 const port = 3000;
